@@ -12,8 +12,6 @@ Thumbs.db
 # Node
 node_modules/
 
-# Trellis
-.trellis/.developer
-.trellis/.current-task
-.trellis/workspace/
-.trellis/tasks/
+# Claude / Trellis (local dev environment)
+.claude/
+.trellis/

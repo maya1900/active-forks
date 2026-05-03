@@ -1,0 +1,19 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Trellis
+.trellis/.developer
+.trellis/.current-task
+.trellis/workspace/
+.trellis/tasks/

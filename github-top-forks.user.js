@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         GitHub Top Forks Viewer
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  Display top 5 most starred forks in the sidebar of GitHub repository pages
 // @author       maya1900
 // @match        https://github.com/*/*
 // @grant        GM_xmlhttpRequest
 // @connect      api.github.com
 // @run-at       document-idle
+// @license      MIT
 // ==/UserScript==
 
 (function () {
@@ -46,7 +47,7 @@
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       const entry = data[key];
       if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.forks;
-    } catch {}
+    } catch { }
     return null;
   }
 
@@ -55,7 +56,7 @@
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
       data[key] = { forks, ts: Date.now() };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch {}
+    } catch { }
   }
 
   function fetchTopForks(owner, repo, sort) {
@@ -87,18 +88,40 @@
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 
+  function findInsertTarget() {
+    // Strategy 1: find h2 containing "Languages" in common GitHub sidebar patterns
+    const selectors = [
+      '.BorderGrid-row h2',
+      '.Layout-sidebar h2',
+      '.Layout-sidebar h3',
+      '[class*="sidebar"] h2',
+      '[class*="sidebar"] h3',
+      'h2', 'h3',
+    ];
+    for (const sel of selectors) {
+      for (const h of document.querySelectorAll(sel)) {
+        if (h.textContent.trim() === 'Languages') {
+          return h.closest('[class*="row"]') || h.closest('[class*="cell"]') || h.parentElement;
+        }
+      }
+    }
+    // Strategy 2: XPath — find any heading with text "Languages"
+    const xpath = document.evaluate(
+      '//h2[contains(text(),"Languages")] | //h3[contains(text(),"Languages")]',
+      document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
+    );
+    if (xpath.singleNodeValue) {
+      const h = xpath.singleNodeValue;
+      return h.closest('[class*="row"]') || h.closest('[class*="cell"]') || h.parentElement;
+    }
+    return null;
+  }
+
   function renderForks(forks, sort) {
     const existing = document.getElementById('top-forks-widget');
     if (existing) existing.remove();
 
-    const headings = document.querySelectorAll('.BorderGrid-row h2');
-    let langSection = null;
-    for (const h of headings) {
-      if (h.textContent.trim() === 'Languages') {
-        langSection = h.closest('.BorderGrid-row');
-        break;
-      }
-    }
+    const langSection = findInsertTarget();
     if (!langSection) return;
 
     const row = document.createElement('div');

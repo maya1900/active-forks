@@ -15,3 +15,4 @@ node_modules/
 # Claude / Trellis (local dev environment)
 .claude/
 .trellis/
+AGENTS.md
